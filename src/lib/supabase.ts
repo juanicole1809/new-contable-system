@@ -16,3 +16,20 @@ export type Factura = {
   ocr_data: any
   created_at: string
 }
+
+export type Proveedor = {
+  id: string
+  cuit: string
+  nombre: string
+  nombre_fantasia: string | null
+  mail: string | null
+  created_at: string
+}
+
+export type Consorcio = {
+  id: string
+  cuit: string
+  nombre: string
+  redconar_building_id: string | null
+  created_at: string
+}
