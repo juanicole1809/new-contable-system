@@ -49,27 +49,26 @@ export default async function ProveedoresPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-slate-50">
-                    <TableHead className="font-semibold">CUIT</TableHead>
-                    <TableHead className="font-semibold">Razón Social</TableHead>
-                    <TableHead className="font-semibold">Nombre Fantasía</TableHead>
-                    <TableHead className="font-semibold">Email</TableHead>
-                    <TableHead className="font-semibold">Creado</TableHead>
+                    <TableHead className="w-72 font-semibold">Proveedor</TableHead>
+                    <TableHead className="w-36 font-semibold">CUIT</TableHead>
+                    <TableHead className="w-56 font-semibold">Email</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {proveedores.map((proveedor) => (
                     <TableRow key={proveedor.id} className="hover:bg-slate-50">
-                      <TableCell className="font-medium">{proveedor.cuit}</TableCell>
-                      <TableCell>{proveedor.nombre}</TableCell>
-                      <TableCell>{proveedor.nombre_fantasia || '-'}</TableCell>
-                      <TableCell>{proveedor.mail || '-'}</TableCell>
-                      <TableCell className="text-sm text-slate-500">
-                        {new Date(proveedor.created_at).toLocaleDateString('es-AR', {
-                          day: '2-digit',
-                          month: '2-digit',
-                          year: 'numeric',
-                        })}
+                      <TableCell>
+                        <div className="flex flex-col" title={`${proveedor.nombre_fantasia || proveedor.nombre || ''}\n${proveedor.nombre || ''}`}>
+                          <span className="font-medium truncate">
+                            {proveedor.nombre_fantasia || proveedor.nombre || '-'}
+                          </span>
+                          <span className="text-xs text-slate-500 truncate">
+                            {proveedor.nombre || '-'}
+                          </span>
+                        </div>
                       </TableCell>
+                      <TableCell>{proveedor.cuit || '-'}</TableCell>
+                      <TableCell>{proveedor.mail || '-'}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
