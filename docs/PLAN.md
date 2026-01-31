@@ -41,20 +41,26 @@ Empezamos simple: **facturas + OCR de Redconar**. Lo demás se agrega después.
 
 ### ✅ Completado
 - [x] Proyecto Supabase creado
-- [x] Credenciales guardadas (.env.example)
 - [x] Tabla `facturas` creada (MVP)
-- [x] Estructura de carpetas organizada
+- [x] Next.js 15+ con TypeScript y Tailwind CSS
+- [x] shadcn/ui configurado
+- [x] Cliente de Supabase (`lib/supabase.ts`)
+- [x] Cliente de Redconar (`lib/redconar.ts`)
+- [x] API route `/api/facturas/upload`
+- [x] Componente `UploadFactura`
+- [x] Página de listado de facturas
+- [x] Flujo completo: Upload → Redconar OCR → Supabase → Listado
+- [x] Repo separado en GitHub
 
 ### 🚧 En Progreso
-- [ ] Proyecto Next.js
-- [ ] Integración con Redconar OCR
+- [ ] Mejoras de UX/UI
 
 ### 📋 Pendiente
-- [ ] Página de upload de PDFs
-- [ ] API route para procesar facturas
+- [ ] Tabla `proveedores`
+- [ ] Tabla `consorcios`
 - [ ] Autenticación básica
-- [ ] Tablas: consorcios, proveedores, administraciones
-- [ ] Cargar factura en Redconar (después de OCR)
+- [ ] Editar/Eliminar facturas
+- [ ] Cargar factura en Redconar (endpoint createAssignTicketToOutflow)
 
 ---
 
@@ -92,55 +98,64 @@ new_system/
 ├── docs/                    # Documentación (PLAN.md, TECH_STACK.md)
 ├── database/                # SQL schemas, migraciones
 │   └── supabase_schema.sql
-├── redconar_api/            # Cliente de Redconar (existente)
-├── .env.example             # Credenciales de ejemplo
-└── .gitignore
-```
-
-**Próximas carpetas a crear:**
-```
-new_system/
-├── app/                     # Next.js App Router
-│   ├── facturas/            # Páginas de facturas
-│   └── api/                 # API routes
-│       └── facturas/
-│           └── upload/
-├── components/              # Componentes React
-├── lib/                     # Utilidades
-│   ├── supabase.ts          # Cliente de Supabase
-│   └── redconar.ts          # Cliente de Redconar
-└── types/                   # Tipos TypeScript
+├── redconar_api/            # Documentación de Redconar
+├── scripts/                 # Scripts de utilidad
+│   └── test-supabase-insert.js
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── api/             # API routes
+│   │   │   └── facturas/
+│   │   │       └── upload/
+│   │   │           └── route.ts
+│   │   ├── layout.tsx
+│   │   ├── page.tsx         # Página principal
+│   │   └── globals.css
+│   ├── components/          # Componentes React
+│   │   ├── ui/              # shadcn/ui components
+│   │   └── upload-factura.tsx
+│   ├── lib/                 # Utilidades
+│   │   ├── supabase.ts      # Cliente de Supabase
+│   │   ├── redconar.ts      # Cliente de Redconar
+│   │   └── utils.ts
+│   └── ...
+├── .env.example             # Credenciales de ejemplo (sin datos reales)
+├── .gitignore
+├── package.json
+├── tsconfig.json
+├── tailwind.config.ts
+├── next.config.ts
+└── README.md
 ```
 
 ---
 
 ## Roadmap
 
-### Phase 1: MVP - Upload + OCR (Actual)
+### ✅ Phase 1: MVP - Upload + OCR (COMPLETADO)
 - [x] Supabase setup
-- [ ] Crear proyecto Next.js
-- [ ] Conectar Supabase
-- [ ] Página: Upload PDF
-- [ ] API: Upload → Redconar OCR → Supabase
-- [ ] Mostrar resultado en pantalla
+- [x] Next.js 15+ con TypeScript y Tailwind
+- [x] shadcn/ui configurado
+- [x] Página de listado de facturas
+- [x] API: Upload → Redconar OCR → Supabase
+- [x] Mostrar resultado en pantalla
 
-### Phase 2: Gestión de Facturas
-- [ ] Listado de facturas
-- [ ] Editar factura
+### 🚧 Phase 2: Gestión de Facturas (Próximo)
+- [ ] Tabla `proveedores` (cuit, nombre, nombre_fantasia, mail)
+- [ ] Tabla `consorcios` (cuit, nombre, redconar_building_id)
+- [ ] Mostrar nombre de proveedor en vez de CUIT
+- [ ] Editar factura (manual override de datos OCR)
+- [ ] Eliminar factura
+- [ ] Filtros (por fecha, por proveedor, etc.)
 - [ ] Cargar factura en Redconar (endpoint createAssignTicketToOutflow)
 
 ### Phase 3: Autenticación y Multi-tenancy
-- [ ] Login simple (usuarios)
-- [ ] Tabla: administraciones
-- [ ] Tabla: usuarios (con administración_id)
+- [ ] Tabla `administraciones`
+- [ ] Tabla `usuarios` (mail, password, administración_id)
+- [ ] Login simple
 - [ ] Restringir acceso por administración
+- [ ] Agregar `administracion_id` a consorcios
 
-### Phase 4: Consorcios y Proveedores
-- [ ] Tabla: consorcios (con redconar_building_id)
-- [ ] Tabla: proveedores
-- [ ] Relacionar factura con consorcio/proveedor por CUIT
-
-### Phase 5: Funcionalidades Avanzadas
+### Phase 4: Funcionalidades Avanzadas
 - [ ] Google Drive integration
 - [ ] Conciliaciones bancarias
 - [ ] Reportes
@@ -148,30 +163,42 @@ new_system/
 
 ---
 
-## Supabase Credentials
+## Supabase Info
 
 ```
 Project URL: https://vvclhzfyszqxvsldkxzq.supabase.co
-Anon Key: (en .env.example)
-Service Role: (en .env.example)
+Table Editor: https://vvclhzfyszqxvsldkxzq.supabase.co/table
 ```
 
-**Importante:** No commitear `.env` real, usar `.env.example` para referencias.
+**Credenciales en .env (NO commitear):**
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `REDCONAR_EMAIL`
+- `REDCONAR_PASSWORD`
 
 ---
 
 ## Repositorio de GitHub
 
-**Pregunta pendiente:** ¿Crear un repo separado para `new_system` o mantenerlo dentro del repo actual de `A-PRODUCCION`?
+**Repo:** https://github.com/juanicole1809/new-contable-system
 
-**Argumentos pro repo separado:**
-- Limpieza: el repo actual tiene muchos proyectos de Apps Script
-- Independencia: deploy de Vercel puede ser más simple
-- README y documentación enfocada solo en el nuevo sistema
+**Estado:** Activo, independiente de `A-PRODUCCION`
 
-**Argumentos pro repo actual:**
-- Todo en un solo lugar
-- Contexto histórico del código que estamos reemplazando
-- Ya está configurado
+---
 
-**Decisión pendiente.**
+## Comandos Útiles
+
+```bash
+# Iniciar servidor de desarrollo
+npm run dev
+
+# Probar conexión a Supabase
+npm run test:supabase
+
+# Build para producción
+npm run build
+
+# Deploy en Vercel (cuando esté listo)
+vercel
+```
