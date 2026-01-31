@@ -1,6 +1,7 @@
 import { supabase, type Factura } from '@/lib/supabase'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { UploadFactura } from '@/components/upload-factura'
 
 async function getFacturas(): Promise<Factura[]> {
   const { data } = await supabase
@@ -25,9 +26,13 @@ export default async function HomePage() {
         <Card>
           <CardHeader>
             <CardTitle>Facturas ({facturas.length})</CardTitle>
-            <CardDescription>Listado de facturas en el sistema</CardDescription>
+            <CardDescription>
+              Subí una factura (PDF/JPG) para procesarla con OCR de Redconar
+            </CardDescription>
           </CardHeader>
           <CardContent>
+            <UploadFactura />
+
             {facturas.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 No hay facturas registradas
