@@ -7,7 +7,7 @@ import { FileText } from 'lucide-react'
 async function getFacturas(): Promise<Factura[]> {
   const { data } = await supabase
     .from('facturas')
-    .select('*')
+    .select('*, proveedores(*), consorcios(*)')
     .order('created_at', { ascending: false })
 
   return data ?? []
@@ -17,25 +17,25 @@ export default async function FacturasPage() {
   const facturas = await getFacturas()
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-violet-100 rounded-lg">
-            <FileText className="w-6 h-6 text-violet-600" />
+    <div className="p-4 sm:p-6 lg:p-8 w-full max-w-[1920px] mx-auto md:pt-8">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+          <div className="p-1.5 sm:p-2 bg-violet-100 rounded-lg flex-shrink-0">
+            <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-violet-600" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900">Facturas</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Facturas</h1>
         </div>
-        <p className="text-slate-600 ml-11">Gestión de facturas con OCR de Redconar</p>
+        <p className="text-sm sm:text-base text-slate-600 ml-8 sm:ml-11">Gestión de facturas con OCR de Redconar</p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Facturas ({facturas.length})</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-lg sm:text-xl">Facturas ({facturas.length})</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Subí una factura (PDF/JPG) para procesarla con OCR de Redconar
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 sm:px-6">
           <UploadFactura />
 
           {facturas.length === 0 ? (

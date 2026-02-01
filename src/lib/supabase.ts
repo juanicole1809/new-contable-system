@@ -14,7 +14,12 @@ export type Factura = {
   cuit_receptor: string | null
   fecha_factura: string | null
   ocr_data: any
+  proveedor_id: string | null
+  consorcio_id: string | null
   created_at: string
+  // Join fields (when fetching with relations)
+  proveedores?: Proveedor
+  consorcios?: Consorcio
 }
 
 export type Proveedor = {

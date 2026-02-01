@@ -53,6 +53,28 @@ export async function POST(req: NextRequest) {
       fechaFacturaDB = `${anio}-${mes}-${dia}`
     }
 
+    // Buscar proveedor por CUIT emisor
+    let proveedorId: string | null = null
+    if (data.cuit_emisor) {
+      const { data: proveedor } = await supabase
+        .from('proveedores')
+        .select('id')
+        .eq('cuit', data.cuit_emisor)
+        .single()
+      proveedorId = proveedor?.id || null
+    }
+
+    // Buscar consorcio por CUIT receptor
+    let consorcioId: string | null = null
+    if (data.cuit_destinatario) {
+      const { data: consorcio } = await supabase
+        .from('consorcios')
+        .select('id')
+        .eq('cuit', data.cuit_destinatario)
+        .single()
+      consorcioId = consorcio?.id || null
+    }
+
     const facturaData = {
       nro_factura: data.numero,
       detalle: data.descripcion,
@@ -60,6 +82,8 @@ export async function POST(req: NextRequest) {
       cuit_emisor: data.cuit_emisor,
       cuit_receptor: data.cuit_destinatario,
       fecha_factura: fechaFacturaDB,
+      proveedor_id: proveedorId,
+      consorcio_id: consorcioId,
       ocr_data: data
     }
 

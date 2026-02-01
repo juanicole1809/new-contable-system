@@ -56,7 +56,7 @@ export function UploadFactura() {
   }
 
   return (
-    <div className="mb-6">
+    <div className="mb-4 sm:mb-6">
       <input
         ref={fileInputRef}
         type="file"
@@ -66,10 +66,11 @@ export function UploadFactura() {
         className="hidden"
         id="file-upload"
       />
-      <label htmlFor="file-upload">
+      <label htmlFor="file-upload" className="block w-full sm:w-auto">
         <Button
           asChild
           disabled={uploading}
+          className="w-full sm:w-auto text-sm sm:text-base"
         >
           <span>
             {uploading ? 'Procesando...' : '📄 Subir Factura (PDF/JPG)'}
@@ -78,7 +79,7 @@ export function UploadFactura() {
       </label>
 
       {message && (
-        <div className={`mt-3 p-3 rounded-md text-sm ${
+        <div className={`mt-3 p-2 sm:p-3 rounded-md text-xs sm:text-sm ${
           message.type === 'success'
             ? 'bg-green-50 text-green-800 border border-green-200'
             : 'bg-red-50 text-red-800 border border-red-200'
