@@ -7,62 +7,98 @@ Host: db.vvclhzfyszqxvsldkxzq.supabase.co
 Port: 5432
 Database: postgres
 User: postgres
-Password: (stored in .env - never commit)
+Password: [YOUR-PASSWORD]
 ```
 
 ## How to Connect
 
-### Option 1: Using psql (command line)
+### ⭐ RECOMMENDED: Using psql (command line)
 
+psql is installed via Homebrew at `/opt/homebrew/bin/psql`.
+
+**Direct connection:**
 ```bash
-# Direct connection
-psql -h db.vvclhzfyszqxvsldkxzq.supabase.co -p 5432 -U postgres -d postgres
-
-# Or using connection string
-psql "postgresql://postgres:[PASSWORD]@db.vvclhzfyszqxvsldkxzq.supabase.co:5432/postgres"
+psql "postgresql://postgres:[YOUR-PASSWORD]@db.vvclhzfyszqxvsldkxzq.supabase.co:5432/postgres"
 ```
 
-### Option 2: Using TablePlus / pgAdmin / DBeaver
+**Or create an alias in your shell profile (~/.zshrc or ~/.bashrc):**
+```bash
+alias supadb='psql "postgresql://postgres:[YOUR-PASSWORD]@db.vvclhzfyszqxvsldkxzq.supabase.co:5432/postgres"'
+```
 
-- **Host:** `db.vvclhzfyszqxvsldkxzq.supabase.co`
-- **Port:** `5432`
-- **User:** `postgres`
-- **Password:** (from .env)
-- **Database:** `postgres`
+Then just run: `supadb`
 
-### Option 3: Supabase Dashboard
+---
 
-1. Go to https://vvclhzfyszqxvsldkxzq.supabase.co
-2. Navigate to **Table Editor** or **SQL Editor**
+### Useful psql Commands
 
-## Useful Queries
-
-```sql
--- List all tables
+```bash
+# List all tables
 \dt
 
--- Describe a table
+# Describe a table structure
 \d facturas
 \d proveedores
 \d consorcios
 
+# Describe with more details
+\d+ facturas
+
+# List indexes
+\di
+
+# Execute a SQL file
+psql "postgresql://postgres:[YOUR-PASSWORD]@db.vvclhzfyszqxvsldkxzq.supabase.co:5432/postgres" -f archivo.sql
+
+# Execute a single command
+psql "postgresql://postgres:[YOUR-PASSWORD]@db.vvclhzfyszqxvsldkxzq.supabase.co:5432/postgres" -c "SELECT * FROM facturas LIMIT 5;"
+```
+
+---
+
+### Useful Queries
+
+```sql
 -- See all invoices without provider match
-SELECT f.*, p.nombre
+SELECT f.id, f.nro_factura, f.cuit_emisor, p.nombre
 FROM facturas f
 LEFT JOIN proveedores p ON f.proveedor_id = p.id
 WHERE f.proveedor_id IS NULL AND f.cuit_emisor IS NOT NULL;
 
 -- See all invoices without consortium match
-SELECT f.*, c.nombre
+SELECT f.id, f.nro_factura, f.cuit_receptor, c.nombre
 FROM facturas f
 LEFT JOIN consorcios c ON f.consorcio_id = c.id
 WHERE f.consorcio_id IS NULL AND f.cuit_receptor IS NOT NULL;
+
+-- Count invoices by provider
+SELECT p.nombre, COUNT(f.id) as total
+FROM proveedores p
+LEFT JOIN facturas f ON f.proveedor_id = p.id
+GROUP BY p.nombre
+ORDER BY total DESC;
 ```
 
-## Running Migrations
+---
 
-Migrations are stored in `supabase/migrations/`. You can:
+### Alternative: Supabase Dashboard
 
-1. **Via psql:** Copy and paste the SQL
-2. **Via Supabase Dashboard:** Go to SQL Editor and paste the migration
-3. **Via this script:** `node scripts/run-migration.js [migration-file]`
+For visual queries and quick edits:
+
+1. Go to https://vvclhzfyszqxvsldkxzq.supabase.co
+2. **Table Editor** → view/edit data visually
+3. **SQL Editor** → run SQL queries in browser
+
+---
+
+### Running Migrations
+
+**Using psql (recommended):**
+```bash
+psql "postgresql://postgres:[YOUR-PASSWORD]@db.vvclhzfyszqxvsldkxzq.supabase.co:5432/postgres" -f supabase/migrations/migration_file.sql
+```
+
+**Or from Supabase Dashboard:**
+1. Go to SQL Editor
+2. Paste the migration SQL
+3. Run

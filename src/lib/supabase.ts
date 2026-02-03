@@ -24,16 +24,17 @@ export type Factura = {
 
 export type Proveedor = {
   id: string
-  cuit: string
+  cuit: string | null
   nombre: string
   nombre_fantasia: string | null
   mail: string | null
+  redconar_prov_id: string | null
   created_at: string
 }
 
 export type Consorcio = {
   id: string
-  cuit: string
+  cuit: string | null
   nombre: string
   redconar_building_id: string | null
   created_at: string

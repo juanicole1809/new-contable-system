@@ -11,6 +11,9 @@ import { Label } from '@/components/ui/label'
 import { Edit2, Trash2, ChevronDown, Search, X, Filter, ChevronUp, Loader2, AlertTriangle } from 'lucide-react'
 import { EditFacturaDialog } from '@/components/edit-factura-dialog'
 import { ConfirmDialog } from '@/components/confirm-dialog'
+import { SearchableSelect } from '@/components/ui/searchable-select'
+import { MultiSelect } from '@/components/ui/multi-select'
+import { type Consorcio, type Proveedor } from '@/lib/supabase'
 
 interface FacturasTableProps {
   facturas: Factura[]
@@ -23,6 +26,8 @@ interface Filters {
   importeMin: string
   importeMax: string
   cuitEmisor: string
+  consorcioId: string
+  proveedorIds: string[]
 }
 
 export function FacturasTable({ facturas }: FacturasTableProps) {
@@ -36,7 +41,53 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
     importeMin: '',
     importeMax: '',
     cuitEmisor: '',
+    consorcioId: '',
+    proveedorIds: [],
   })
+
+  // Obtener listas únicas de consorcios y proveedores
+  const consorciosUnicos = useMemo(() => {
+    const consorciosMap = new Map<string, Consorcio>()
+    facturas.forEach((factura) => {
+      if (factura.consorcios && !consorciosMap.has(factura.consorcios.id)) {
+        consorciosMap.set(factura.consorcios.id, factura.consorcios)
+      }
+    })
+    return Array.from(consorciosMap.values()).sort((a, b) => 
+      a.nombre.localeCompare(b.nombre)
+    )
+  }, [facturas])
+
+  const proveedoresUnicos = useMemo(() => {
+    const proveedoresMap = new Map<string, Proveedor>()
+    facturas.forEach((factura) => {
+      if (factura.proveedores && !proveedoresMap.has(factura.proveedores.id)) {
+        proveedoresMap.set(factura.proveedores.id, factura.proveedores)
+      }
+    })
+    return Array.from(proveedoresMap.values()).sort((a, b) => 
+      a.nombre.localeCompare(b.nombre)
+    )
+  }, [facturas])
+
+  // Opciones para los selects
+  const consorcioOptions = useMemo(() => {
+    return consorciosUnicos.map((c) => ({
+      value: c.id,
+      label: c.nombre,
+      subtitle: c.cuit || 'Sin CUIT',
+    }))
+  }, [consorciosUnicos])
+
+  const proveedorOptions = useMemo(() => {
+    return proveedoresUnicos.map((p) => ({
+      value: p.id,
+      label: p.nombre,
+      subtitle: p.cuit
+        ? `${p.cuit}${p.nombre_fantasia ? ` · ${p.nombre_fantasia}` : ''}`
+        : p.nombre_fantasia || 'Sin CUIT',
+    }))
+  }, [proveedoresUnicos])
   const [editDialogOpen, setEditDialogOpen] = useState(false)
   const [facturaToEdit, setFacturaToEdit] = useState<Factura | null>(null)
   const [deleteLoading, setDeleteLoading] = useState<string | null>(null)
@@ -52,6 +103,18 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
           factura.detalle?.toLowerCase().includes(searchLower) ||
           factura.nro_factura?.toLowerCase().includes(searchLower)
         if (!matchesSearch) return false
+      }
+
+      // Filtro por consorcio
+      if (filters.consorcioId) {
+        if (factura.consorcio_id !== filters.consorcioId) return false
+      }
+
+      // Filtro por proveedor (múltiple)
+      if (filters.proveedorIds.length > 0) {
+        if (!factura.proveedor_id || !filters.proveedorIds.includes(factura.proveedor_id)) {
+          return false
+        }
       }
 
       // Filtro por fecha
@@ -80,7 +143,16 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
     })
   }, [facturas, filters])
 
-  const hasActiveFilters = Object.values(filters).some((value) => value !== '')
+  const hasActiveFilters = useMemo(() => {
+    return filters.search !== '' ||
+      filters.fechaDesde !== '' ||
+      filters.fechaHasta !== '' ||
+      filters.importeMin !== '' ||
+      filters.importeMax !== '' ||
+      filters.cuitEmisor !== '' ||
+      filters.consorcioId !== '' ||
+      filters.proveedorIds.length > 0
+  }, [filters])
 
   const clearFilters = () => {
     setFilters({
@@ -90,6 +162,8 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
       importeMin: '',
       importeMax: '',
       cuitEmisor: '',
+      consorcioId: '',
+      proveedorIds: [],
     })
   }
 
@@ -174,7 +248,11 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
           <span>{showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}</span>
           {hasActiveFilters && (
             <span className="ml-1 px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
-              {Object.values(filters).filter(v => v !== '').length}
+              {Object.values(filters).filter(v => {
+                if (typeof v === 'string') return v !== ''
+                if (Array.isArray(v)) return v.length > 0
+                return false
+              }).length}
             </span>
           )}
           {showFilters ? (
@@ -200,6 +278,38 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
       {showFilters && (
         <div className="rounded-md border bg-white p-3 sm:p-4 animate-in slide-in-from-top-2 duration-200">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {/* Consorcio - Primera fila */}
+          <div className="space-y-2">
+            <Label htmlFor="consorcio" className="text-xs text-slate-600">
+              Consorcio
+            </Label>
+            <SearchableSelect
+              options={consorcioOptions}
+              value={filters.consorcioId}
+              onChange={(value) => setFilters({ ...filters, consorcioId: value })}
+              placeholder="Seleccionar consorcio..."
+              searchPlaceholder="Buscar consorcio..."
+              emptyText="No se encontraron consorcios"
+              allowClear={true}
+              onClear={() => setFilters({ ...filters, consorcioId: '' })}
+            />
+          </div>
+
+          {/* Proveedor - Primera fila */}
+          <div className="space-y-2">
+            <Label htmlFor="proveedor" className="text-xs text-slate-600">
+              Proveedor
+            </Label>
+            <MultiSelect
+              options={proveedorOptions}
+              value={filters.proveedorIds}
+              onChange={(value) => setFilters({ ...filters, proveedorIds: value })}
+              placeholder="Seleccionar proveedores..."
+              searchPlaceholder="Buscar proveedores..."
+              emptyText="No se encontraron proveedores"
+            />
+          </div>
+
           {/* Búsqueda */}
           <div className="space-y-2">
             <Label htmlFor="search" className="text-xs text-slate-600">
@@ -360,6 +470,11 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                         {factura.proveedores ? (
                           <div className="flex items-center gap-1">
                             <span className="text-xs sm:text-sm">{factura.proveedores.nombre}</span>
+                            {!factura.proveedores.cuit && (
+                              <span title="Proveedor sin CUIT">
+                                <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 text-amber-500" />
+                              </span>
+                            )}
                           </div>
                         ) : factura.cuit_emisor ? (
                           <div className="flex items-center gap-1 text-amber-600" title={`CUIT: ${factura.cuit_emisor} - Sin proveedor matcheado`}>
@@ -397,7 +512,7 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="h-8 w-8 p-0"
                             onClick={() => handleEdit(factura)}
                           >
                             <Edit2 className="w-4 h-4" />
@@ -405,7 +520,7 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100 transition-opacity text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={() => handleDelete(factura)}
                             disabled={deleteLoading !== null}
                           >
@@ -422,59 +537,67 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                     {expandedId === factura.id && factura.detalle && (
                       <TableRow>
                         <TableCell colSpan={8} className="bg-slate-50/50 border-b border-slate-200 px-3 sm:px-4">
-                          <div className="p-4 sm:p-6 space-y-4">
-                            {/* Descripción */}
-                            <div className="space-y-2">
-                              <h4 className="text-sm font-semibold text-slate-700">Descripción</h4>
-                              <p className="text-sm text-slate-600 whitespace-pre-wrap leading-relaxed bg-white p-3 rounded-md border border-slate-200">
+                          <div className="p-3 sm:p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                            {/* Descripción - ocupa todo el ancho */}
+                            <div className="sm:col-span-2 lg:col-span-3 space-y-1 pb-3 border-b border-slate-200">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Descripción</span>
+                              <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
                                 {factura.detalle}
                               </p>
                             </div>
 
                             {/* Información adicional en grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-200">
-                              <div className="space-y-1">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Fecha Factura</span>
-                                <p className="text-sm font-medium text-slate-700">{formatDate(factura.fecha_factura)}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">N° Factura</span>
-                                <p className="text-sm font-medium text-slate-700">{factura.nro_factura || '-'}</p>
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Importe</span>
-                                <p className="text-sm font-medium text-slate-700">
-                                  {factura.importe ? `$${factura.importe.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '-'}
-                                </p>
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Proveedor</span>
-                                {factura.proveedores ? (
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Fecha Factura</span>
+                              <p className="text-sm font-medium text-slate-700">{formatDate(factura.fecha_factura)}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">N° Factura</span>
+                              <p className="text-sm font-medium text-slate-700">{factura.nro_factura || '-'}</p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Importe</span>
+                              <p className="text-sm font-medium text-slate-700">
+                                {factura.importe ? `$${factura.importe.toLocaleString('es-AR', { minimumFractionDigits: 2 })}` : '-'}
+                              </p>
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Proveedor</span>
+                              {factura.proveedores ? (
+                                <div className="flex flex-col gap-0.5">
                                   <p className="text-sm font-medium text-slate-700">{factura.proveedores.nombre}</p>
-                                ) : (
-                                  <div className="flex items-center gap-1 text-amber-600">
-                                    <AlertTriangle className="w-3 h-3" />
-                                    <p className="text-sm font-mono">{factura.cuit_emisor || 'Sin CUIT'}</p>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Consorcio</span>
-                                {factura.consorcios ? (
+                                  {!factura.proveedores.cuit && (
+                                    <p className="text-xs text-amber-600">Sin CUIT</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 text-amber-600">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  <p className="text-sm font-mono">{factura.cuit_emisor || 'Sin CUIT'}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Consorcio</span>
+                              {factura.consorcios ? (
+                                <div className="flex flex-col gap-0.5">
                                   <p className="text-sm font-medium text-slate-700">{factura.consorcios.nombre}</p>
-                                ) : (
-                                  <div className="flex items-center gap-1 text-amber-600">
-                                    <AlertTriangle className="w-3 h-3" />
-                                    <p className="text-sm font-mono">{factura.cuit_receptor || 'Sin CUIT'}</p>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="space-y-1">
-                                <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Ingresado sistema</span>
-                                <p className="text-sm font-medium text-slate-700">
-                                  {formatDate(factura.created_at)}
-                                </p>
-                              </div>
+                                  {!factura.consorcios.cuit && (
+                                    <p className="text-xs text-amber-600">Sin CUIT</p>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 text-amber-600">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  <p className="text-sm font-mono">{factura.cuit_receptor || 'Sin CUIT'}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-1">
+                              <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Ingresado sistema</span>
+                              <p className="text-sm font-medium text-slate-700">
+                                {formatDate(factura.created_at)}
+                              </p>
                             </div>
                           </div>
                         </TableCell>
