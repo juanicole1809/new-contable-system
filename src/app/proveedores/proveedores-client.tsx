@@ -194,7 +194,9 @@ export function ProveedoresClient({ initialProveedores }: ProveedoresClientProps
                         <div className="flex items-center gap-2">
                           {proveedor.cuit || '-'}
                           {!proveedor.cuit && (
-                            <AlertCircle className="w-4 h-4 text-amber-500" title="Sin CUIT" />
+                            <span title="Sin CUIT">
+                              <AlertCircle className="w-4 h-4 text-amber-500" />
+                            </span>
                           )}
                         </div>
                       </TableCell>

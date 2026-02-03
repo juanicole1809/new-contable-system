@@ -2,16 +2,53 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { FileText, Building, Users, Menu, X } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
+import { FileText, Building, Users, Menu, X, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Tooltip } from '@/components/ui/tooltip'
+import { createClient } from '@/lib/supabase/client'
 
 const navItems = [
   { href: '/consorcios', label: 'Consorcios', icon: Building },
   { href: '/proveedores', label: 'Proveedores', icon: Users },
   { href: '/facturas', label: 'Facturas', icon: FileText },
 ]
+
+function SidebarLogout({ isCollapsed }: { isCollapsed: boolean }) {
+  const router = useRouter()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
+
+  const buttonContent = (
+    <button
+      onClick={handleLogout}
+      disabled={isLoggingOut}
+      className={`flex items-center gap-2 lg:gap-3 rounded-lg transition-all duration-200 text-sm font-medium text-slate-300 hover:bg-red-900/30 hover:text-red-400 disabled:opacity-50 ${
+        isCollapsed ? 'justify-center px-2 py-2 w-full' : 'px-3 lg:px-4 py-2 lg:py-3 w-full'
+      }`}
+    >
+      <LogOut className={isCollapsed ? 'w-5 h-5' : 'w-4 h-4 lg:w-5 lg:h-5'} />
+      {!isCollapsed && (
+        <span className="text-xs lg:text-sm whitespace-nowrap">
+          {isLoggingOut ? 'Saliendo...' : 'Cerrar sesión'}
+        </span>
+      )}
+    </button>
+  )
+
+  if (isCollapsed) {
+    return <Tooltip content="Cerrar sesión" side="right">{buttonContent}</Tooltip>
+
+  }
+
+  return buttonContent
+}
 
 function SidebarContent({ 
   isCollapsed, 
@@ -80,11 +117,7 @@ function SidebarContent({
 
       {/* Footer */}
       <div className={`p-3 lg:p-4 border-t border-slate-800 transition-all duration-200 overflow-hidden ${isCollapsed ? 'px-2' : ''}`}>
-        {isCollapsed ? (
-          <div className="text-xs text-slate-500 text-center">v1</div>
-        ) : (
-          <div className="text-xs text-slate-500 text-center whitespace-nowrap">v1.0.0</div>
-        )}
+        <SidebarLogout isCollapsed={isCollapsed} />
       </div>
     </>
   )
@@ -93,8 +126,8 @@ function SidebarContent({
 export function Sidebar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
-  const sidebarRef = useRef<HTMLAsideElement>(null)
-  const hoverTimeoutRef = useRef<NodeJS.Timeout>()
+  const sidebarRef = useRef<HTMLElement>(null)
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Cerrar el menú móvil cuando cambia la ruta
   const pathname = usePathname()

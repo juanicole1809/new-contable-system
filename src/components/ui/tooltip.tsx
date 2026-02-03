@@ -10,7 +10,7 @@ interface TooltipProps {
 
 export function Tooltip({ children, content, side = 'right' }: TooltipProps) {
   const [isVisible, setIsVisible] = React.useState(false)
-  const timeoutRef = React.useRef<NodeJS.Timeout>()
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   React.useEffect(() => {
     return () => {

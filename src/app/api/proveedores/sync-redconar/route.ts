@@ -24,13 +24,16 @@ export async function POST() {
     console.error('Error sincronizando proveedores:', error)
 
     // Si el error tiene stdout, intentar extraer el JSON
-    if (error.stdout) {
+    if (error instanceof Error && 'stdout' in error) {
       try {
-        const lines = error.stdout.trim().split('\n')
-        const jsonLine = lines.find(line => line.trim().startsWith('{'))
-        if (jsonLine) {
-          const result = JSON.parse(jsonLine.trim())
-          return NextResponse.json(result)
+        const err = error as { stdout?: string }
+        const lines = err.stdout?.trim().split('\n')
+        if (lines) {
+          const jsonLine = lines.find(line => line.trim().startsWith('{'))
+          if (jsonLine) {
+            const result = JSON.parse(jsonLine.trim())
+            return NextResponse.json(result)
+          }
         }
       } catch {
         // No es JSON, retornar error normal
@@ -38,7 +41,7 @@ export async function POST() {
     }
 
     return NextResponse.json(
-      { error: 'Error sincronizando proveedores: ' + error.message },
+      { error: 'Error sincronizando proveedores: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     )
   }
