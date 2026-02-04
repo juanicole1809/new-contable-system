@@ -35,6 +35,8 @@ export function UploadFactura() {
         })
         // Refresh the page to show the new invoice (server-side refresh, no cache)
         router.refresh()
+        // Clear message after 3 seconds
+        setTimeout(() => setMessage(null), 3000)
       } else {
         setMessage({
           type: 'error',
