@@ -39,8 +39,7 @@ export default function LoginPage() {
       <div className="max-w-md w-full">
         <div className="bg-white shadow-lg rounded-lg p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Contable Software</h1>
-            <p className="text-gray-600 mt-2">Inicia sesión para continuar</p>
+            <h1 className="text-3xl font-bold text-gray-900">Ruko Administración</h1>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -88,6 +87,10 @@ export default function LoginPage() {
               {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
             </button>
           </form>
+
+          <p className="text-center text-gray-500 text-sm mt-6">
+            Todos los derechos reservados 2026
+          </p>
         </div>
       </div>
     </div>

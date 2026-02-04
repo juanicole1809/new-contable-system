@@ -4,6 +4,9 @@ import { UploadFactura } from '@/components/upload-factura'
 import { FacturasTable } from '@/components/facturas-table'
 import { FileText } from 'lucide-react'
 
+// Force dynamic rendering (no cache)
+export const dynamic = 'force-dynamic'
+
 async function getFacturas(): Promise<Factura[]> {
   const { data } = await supabase
     .from('facturas')
