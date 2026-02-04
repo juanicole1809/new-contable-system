@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 
 export function UploadFactura() {
+  const router = useRouter()
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -31,10 +33,8 @@ export function UploadFactura() {
           type: 'success',
           text: `Factura ${result.factura.nro_factura} procesada correctamente. Importe: $${result.factura.importe}`
         })
-        // Recargar la página para ver la nueva factura
-        setTimeout(() => {
-          window.location.reload()
-        }, 1500)
+        // Refresh the page to show the new invoice (server-side refresh, no cache)
+        router.refresh()
       } else {
         setMessage({
           type: 'error',
