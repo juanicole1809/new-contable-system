@@ -30,10 +30,15 @@ interface Filters {
   proveedorIds: string[]
 }
 
+type SortColumn = 'consorcio' | 'proveedor' | 'fecha' | 'nroFactura' | 'detalle' | 'importe'
+type SortDirection = 'asc' | 'desc' | null
+
 export function FacturasTable({ facturas }: FacturasTableProps) {
   const router = useRouter()
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [showFilters, setShowFilters] = useState(false)
+  const [sortColumn, setSortColumn] = useState<SortColumn>('proveedor')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [filters, setFilters] = useState<Filters>({
     search: '',
     fechaDesde: '',
@@ -153,6 +158,77 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
       filters.consorcioId !== '' ||
       filters.proveedorIds.length > 0
   }, [filters])
+
+  // Sort logic - when sorting by consorcio or proveedor, always sort by consorcio first, then by proveedor
+  const sortedFacturas = useMemo(() => {
+    return [...filteredFacturas].sort((a, b) => {
+      // Helper function to compare two values
+      const compare = (valA: any, valB: any, direction: 'asc' | 'desc') => {
+        if (valA < valB) return direction === 'asc' ? -1 : 1
+        if (valA > valB) return direction === 'asc' ? 1 : -1
+        return 0
+      }
+
+      // When sorting by consorcio or proveedor, use composite sort (consorcio first, then proveedor)
+      if (sortColumn === 'consorcio' || sortColumn === 'proveedor') {
+        const consorcioA = a.consorcios?.nombre?.toLowerCase() || ''
+        const consorcioB = b.consorcios?.nombre?.toLowerCase() || ''
+        const consorcioResult = compare(consorcioA, consorcioB, sortDirection || 'asc')
+
+        // If consorcios are different, return that result
+        if (consorcioResult !== 0) return consorcioResult
+
+        // Same consorcio, sort by proveedor as secondary
+        const proveedorA = a.proveedores?.nombre?.toLowerCase() || ''
+        const proveedorB = b.proveedores?.nombre?.toLowerCase() || ''
+        return compare(proveedorA, proveedorB, sortDirection || 'asc')
+      }
+
+      // For other columns, just sort by that column
+      if (!sortDirection) return 0
+
+      let compareA: any
+      let compareB: any
+
+      switch (sortColumn) {
+        case 'fecha':
+          compareA = a.fecha_factura || ''
+          compareB = b.fecha_factura || ''
+          break
+        case 'nroFactura':
+          compareA = a.nro_factura || ''
+          compareB = b.nro_factura || ''
+          break
+        case 'detalle':
+          compareA = a.detalle?.toLowerCase() || ''
+          compareB = b.detalle?.toLowerCase() || ''
+          break
+        case 'importe':
+          compareA = a.importe || 0
+          compareB = b.importe || 0
+          break
+        default:
+          return 0
+      }
+
+      return compare(compareA, compareB, sortDirection)
+    })
+  }, [filteredFacturas, sortColumn, sortDirection])
+
+  const handleSort = (column: SortColumn) => {
+    if (sortColumn === column) {
+      if (sortDirection === 'asc') {
+        setSortDirection('desc')
+      } else if (sortDirection === 'desc') {
+        setSortDirection(null)
+      } else {
+        setSortDirection('asc')
+      }
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
 
   const clearFilters = () => {
     setFilters({
@@ -403,7 +479,7 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
         </div>
         {hasActiveFilters && (
           <div className="mt-3 text-xs text-slate-500">
-            Mostrando {filteredFacturas.length} de {facturas.length} facturas
+            Mostrando {sortedFacturas.length} de {facturas.length} facturas
           </div>
         )}
       </div>
@@ -416,24 +492,90 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
             <TableHeader>
               <TableRow className="bg-slate-50">
                 <TableHead className="w-10 sm:w-12 font-semibold min-w-[40px] sm:min-w-[48px]"></TableHead>
-                <TableHead className="font-semibold min-w-[150px] sm:min-w-[180px] text-xs sm:text-sm">Consorcio</TableHead>
-                <TableHead className="font-semibold min-w-[150px] sm:min-w-[180px] text-xs sm:text-sm">Proveedor</TableHead>
-                <TableHead className="font-semibold min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Fecha Factura</TableHead>
-                <TableHead className="font-semibold min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">N° Factura</TableHead>
-                <TableHead className="font-semibold min-w-[150px] sm:min-w-[200px] text-xs sm:text-sm">Detalle</TableHead>
-                <TableHead className="font-semibold min-w-[100px] sm:min-w-[120px] text-xs sm:text-sm">Importe</TableHead>
+                <TableHead
+                  className="font-semibold w-[180px] max-w-[180px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleSort('consorcio')}
+                >
+                  <div className="flex items-center gap-1">
+                    Consorcio
+                    {sortColumn === 'consorcio' && (
+                      sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> :
+                      sortDirection === 'desc' ? <ChevronDown className="w-3 h-3" /> : null
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="font-semibold w-[200px] max-w-[200px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleSort('proveedor')}
+                >
+                  <div className="flex items-center gap-1">
+                    Proveedor
+                    {sortColumn === 'proveedor' && (
+                      sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> :
+                      sortDirection === 'desc' ? <ChevronDown className="w-3 h-3" /> : null
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="font-semibold w-[110px] max-w-[110px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleSort('fecha')}
+                >
+                  <div className="flex items-center gap-1">
+                    Fecha Factura
+                    {sortColumn === 'fecha' && (
+                      sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> :
+                      sortDirection === 'desc' ? <ChevronDown className="w-3 h-3" /> : null
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="font-semibold w-[130px] max-w-[130px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleSort('nroFactura')}
+                >
+                  <div className="flex items-center gap-1">
+                    N° Factura
+                    {sortColumn === 'nroFactura' && (
+                      sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> :
+                      sortDirection === 'desc' ? <ChevronDown className="w-3 h-3" /> : null
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="font-semibold w-[200px] max-w-[200px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleSort('detalle')}
+                >
+                  <div className="flex items-center gap-1">
+                    Detalle
+                    {sortColumn === 'detalle' && (
+                      sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> :
+                      sortDirection === 'desc' ? <ChevronDown className="w-3 h-3" /> : null
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="font-semibold w-[120px] max-w-[120px] text-xs sm:text-sm cursor-pointer hover:bg-slate-100 select-none"
+                  onClick={() => handleSort('importe')}
+                >
+                  <div className="flex items-center gap-1">
+                    Importe
+                    {sortColumn === 'importe' && (
+                      sortDirection === 'asc' ? <ChevronUp className="w-3 h-3" /> :
+                      sortDirection === 'desc' ? <ChevronDown className="w-3 h-3" /> : null
+                    )}
+                  </div>
+                </TableHead>
                 <TableHead className="w-20 sm:w-24 min-w-[80px] sm:min-w-[96px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredFacturas.length === 0 ? (
+              {sortedFacturas.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-slate-500">
                     {hasActiveFilters ? 'No se encontraron facturas con los filtros aplicados' : 'No hay facturas'}
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredFacturas.map((factura) => (
+                sortedFacturas.map((factura) => (
                   <React.Fragment key={factura.id}>
                     <TableRow 
                       className={`hover:bg-slate-50 group ${factura.detalle ? 'cursor-pointer' : ''}`}
@@ -450,10 +592,10 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                       </TableCell>
 
                       {/* Consorcio */}
-                      <TableCell>
+                      <TableCell className="w-[180px] max-w-[180px]">
                         {factura.consorcios ? (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs sm:text-sm">{factura.consorcios.nombre}</span>
+                            <span className="text-xs sm:text-sm truncate" title={factura.consorcios.nombre}>{factura.consorcios.nombre}</span>
                           </div>
                         ) : factura.cuit_receptor ? (
                           <div className="flex items-center gap-1 text-amber-600" title={`CUIT: ${factura.cuit_receptor} - Sin consorcio matcheado`}>
@@ -466,10 +608,10 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                       </TableCell>
 
                       {/* Proveedor */}
-                      <TableCell>
+                      <TableCell className="w-[200px] max-w-[200px]">
                         {factura.proveedores ? (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs sm:text-sm">{factura.proveedores.nombre}</span>
+                            <span className="text-xs sm:text-sm truncate" title={factura.proveedores.nombre}>{factura.proveedores.nombre}</span>
                             {!factura.proveedores.cuit && (
                               <span title="Proveedor sin CUIT">
                                 <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 text-amber-500" />
@@ -487,20 +629,20 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                       </TableCell>
 
                       {/* Fecha Factura */}
-                      <TableCell className="font-medium text-xs sm:text-sm">{formatDate(factura.fecha_factura)}</TableCell>
+                      <TableCell className="w-[110px] max-w-[110px] font-medium text-xs sm:text-sm">{formatDate(factura.fecha_factura)}</TableCell>
 
                       {/* N° Factura */}
-                      <TableCell className="font-medium text-xs sm:text-sm">{factura.nro_factura || '-'}</TableCell>
+                      <TableCell className="w-[130px] max-w-[130px] font-medium text-xs sm:text-sm">{factura.nro_factura || '-'}</TableCell>
 
                       {/* Detalle truncado */}
-                      <TableCell className="max-w-48">
+                      <TableCell className="w-[200px] max-w-[200px]">
                         <div className="truncate text-xs sm:text-sm" title={factura.detalle || '-'}>
                           {factura.detalle || '-'}
                         </div>
                       </TableCell>
 
                       {/* Importe */}
-                      <TableCell>
+                      <TableCell className="w-[120px] max-w-[120px]">
                         {factura.importe ? (
                           <Badge variant="outline" className="font-semibold text-xs">
                             ${factura.importe.toLocaleString('es-AR', { minimumFractionDigits: 2 })}
