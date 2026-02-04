@@ -610,11 +610,18 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                       {/* Proveedor */}
                       <TableCell className="w-[200px] max-w-[200px]">
                         {factura.proveedores ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-xs sm:text-sm truncate" title={factura.proveedores.nombre}>{factura.proveedores.nombre}</span>
-                            {!factura.proveedores.cuit && (
-                              <span title="Proveedor sin CUIT">
+                          <div className="flex flex-col" title={`${factura.proveedores.nombre_fantasia || factura.proveedores.nombre || ''}\n${factura.proveedores.nombre || ''}`}>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs sm:text-sm font-medium truncate">
+                                {factura.proveedores.nombre_fantasia || factura.proveedores.nombre || '-'}
+                              </span>
+                              {!factura.proveedores.cuit && (
                                 <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 flex-shrink-0 text-amber-500" />
+                              )}
+                            </div>
+                            {factura.proveedores.nombre_fantasia && factura.proveedores.nombre_fantasia !== factura.proveedores.nombre && (
+                              <span className="text-xs text-slate-500 truncate">
+                                {factura.proveedores.nombre}
                               </span>
                             )}
                           </div>
@@ -707,7 +714,14 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                               <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Proveedor</span>
                               {factura.proveedores ? (
                                 <div className="flex flex-col gap-0.5">
-                                  <p className="text-sm font-medium text-slate-700">{factura.proveedores.nombre}</p>
+                                  <p className="text-sm font-medium text-slate-700 truncate" title={factura.proveedores.nombre_fantasia || factura.proveedores.nombre}>
+                                    {factura.proveedores.nombre_fantasia || factura.proveedores.nombre}
+                                  </p>
+                                  {factura.proveedores.nombre_fantasia && factura.proveedores.nombre_fantasia !== factura.proveedores.nombre && (
+                                    <p className="text-xs text-slate-500 truncate" title={factura.proveedores.nombre}>
+                                      {factura.proveedores.nombre}
+                                    </p>
+                                  )}
                                   {!factura.proveedores.cuit && (
                                     <p className="text-xs text-amber-600">Sin CUIT</p>
                                   )}
@@ -715,7 +729,7 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                               ) : (
                                 <div className="flex items-center gap-1 text-amber-600">
                                   <AlertTriangle className="w-3 h-3" />
-                                  <p className="text-sm font-mono">{factura.cuit_emisor || 'Sin CUIT'}</p>
+                                  <p className="text-sm font-mono truncate">{factura.cuit_emisor || 'Sin CUIT'}</p>
                                 </div>
                               )}
                             </div>
@@ -723,7 +737,9 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                               <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Consorcio</span>
                               {factura.consorcios ? (
                                 <div className="flex flex-col gap-0.5">
-                                  <p className="text-sm font-medium text-slate-700">{factura.consorcios.nombre}</p>
+                                  <p className="text-sm font-medium text-slate-700 truncate" title={factura.consorcios.nombre}>
+                                    {factura.consorcios.nombre}
+                                  </p>
                                   {!factura.consorcios.cuit && (
                                     <p className="text-xs text-amber-600">Sin CUIT</p>
                                   )}
@@ -731,7 +747,7 @@ export function FacturasTable({ facturas }: FacturasTableProps) {
                               ) : (
                                 <div className="flex items-center gap-1 text-amber-600">
                                   <AlertTriangle className="w-3 h-3" />
-                                  <p className="text-sm font-mono">{factura.cuit_receptor || 'Sin CUIT'}</p>
+                                  <p className="text-sm font-mono truncate">{factura.cuit_receptor || 'Sin CUIT'}</p>
                                 </div>
                               )}
                             </div>
